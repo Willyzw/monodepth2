@@ -6,6 +6,10 @@
 
 from __future__ import absolute_import, division, print_function
 import os
+import io
+import numpy as np
+import matplotlib.pyplot as plt
+import PIL.Image as pil
 import hashlib
 import zipfile
 from six.moves import urllib
@@ -112,3 +116,33 @@ def download_model_if_doesnt_exist(model_name):
             f.extractall(model_path)
 
         print("   Model unzipped to {}".format(model_path))
+
+
+def plot_disp(disp, vmax):
+    buf = io.BytesIO()
+    plt.imsave(buf, disp, cmap='plasma', vmax=vmax)
+    buf.seek(0)
+    disp_ = np.array(pil.open(buf))[:,:,:3]
+    buf.close()
+    return disp_
+
+
+def plot_vo_traj(poses, size, dpi=64):
+    plt.figure(figsize=size)
+    plt.title("Visual odometry", fontsize=15)
+    ax = plt.gca()
+    ax.set_aspect('equal', adjustable='datalim')
+    ax.spines['left'].set_position('zero')
+    ax.spines['bottom'].set_position('zero')
+    pos_pred_ = np.array(poses)
+    plt.plot(pos_pred_[:, 0], pos_pred_[:, 2], 'o-', label='pred')
+    plt.scatter(pos_pred_[-1, 0], pos_pred_[-1, 2], color='r', s=100, zorder=10)
+    plt.text(pos_pred_[-1, 0], pos_pred_[-1, 2], 'NOW', fontsize=15, zorder=20)
+    plt.legend(loc=4, fontsize=15)
+    buf = io.BytesIO()
+    plt.savefig(buf, dpi=dpi)
+    plt.close()
+    buf.seek(0)
+    vo = np.array(pil.open(buf))[:,:,:3]
+    buf.close()
+    return vo
